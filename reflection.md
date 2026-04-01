@@ -6,7 +6,12 @@
 
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
-
+in the intial UML design you can add a pet with its name, species, and age. youc an also scehedule a task for the pet along with the time and how often. you can also view all of the tasks of the day in order.
+I identidied four main classes in pawpal:
+firstly task which represents a single activity and it holds a description, scheduled time, frequency, and completion status of the activity so its responsible for knowing whether it has been done.
+second pet which holds a pet's name, species, and age and owns a list of tasks and its responsible for adding/removing tasks and filtering the ones that are pending.
+third owner which Represents the app's user. It Holds a list of Pets and provides a view of all tasks for the pets. 
+Lastly, scheduler takes an owner and handles sorting, filtering, and displaying the daily schedule. Keeps business logic out of the data classes.
 **b. Design changes**
 
 - Did your design change during implementation?
