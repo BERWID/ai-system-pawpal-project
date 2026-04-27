@@ -1,90 +1,78 @@
-# PawPal+ (Module 2 Project)
+# PawPal+ AI
 
-You are building **PawPal+**, a Streamlit app that helps a pet owner plan care tasks for their pet.
+## Base Project
 
-## Scenario
+This extends **PawPal+** from Module 2. The original app let a pet owner register pets, add care tasks (walks, feeding, meds), detect scheduling conflicts, and generate a sorted daily plan using rule-based logic across four classes task, pet, owner and scheduler.
 
-A busy pet owner needs help staying consistent with pet care. They want an assistant that can:
+## New AI Features
 
-- Track pet care tasks (walks, feeding, meds, enrichment, grooming, etc.)
-- Consider constraints (time available, priority, owner preferences)
-- Produce a daily plan and explain why it chose that plan
+**1. Gemini Schedule Advisor** — sends the owner's task list to Gemini and gets back a natural-language recommendation for the best task order and why. This is integrated directly into the Streamlit UI.
 
-Your job is to design the system first (UML), then implement the logic in Python, then connect it to the Streamlit UI.
+**2. Welfare Check** — sends the task list to Gemini and asks it to flag missing essential care or animal welfare concerns.
 
-## What you will build
+**3. Input Guardrail** — validates every task before it's added. Blocks empty titles, disallowed terms, and unrealistic durations. All decisions are logged to `pawpal.log`.
 
-Your final app should:
+## Architecture
 
-- Enter owner and pet info in a simple UI
-- Add tasks with title, duration, priority, and scheduled time
-- Generate a sorted daily schedule based on time and priority
-- Conflict warnings when two tasks are scheduled at the same time
-- Daily/weekly recurrence — completing a task auto-schedules the next occurrence
-- Full test suite covering core scheduling behaviors
-
-## Getting started
-
-
-### Setup
-
-```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
 ```
-### Run the app
+User
+ │
+ ▼
+Streamlit UI (app.py)
+ │              │
+ ▼              ▼
+Scheduler    ai_helper.py
+(rule-based)  ├── validate_input()  ← Guardrail
+              ├── get_schedule_advice() ──► Gemini API
+              └── check_welfare()        ──► Gemini API
+                                              │
+                                         pawpal.log
+```
+
+Data flow: User inputs task → guardrail validates → added to session → "Build schedule" sorts by time and detects conflicts → "Get AI advice" sends tasks to Gemini → response shown in UI.
+
+## Setup
 
 ```bash
+pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Smarter Scheduling
+Enter your Gemini API key in the sidebar when the app opens.
 
-The `Scheduler` class handles all algorithmic logic:
-- Tasks sorted using Python's `sorted()` with a time-string key
-- Conflict detection scans for duplicate time slots across all pets
-- Recurrence uses `timedelta` to calculate the next due date on task completion
-- Filtering supports both pet name and completion status
+## Sample Inputs & Outputs
 
-## Testing PawPal+
+**Input 1 — Schedule advice:**
+Tasks: Morning walk (08:00 AM), Feeding (07:00 AM), Medication (12:00 PM) for a dog named Mochi.
+
+> "Start with feeding at 7 AM since dogs should eat before exercise. Follow with the morning walk at 8 AM once digestion has begun. Give medication at noon as scheduled — midday doses are easiest to remember and least disruptive to activity."
+
+**Input 2 — Welfare check:**
+Tasks: Morning walk only, for a dog.
+
+> "A single walk covers exercise but leaves feeding, water, and enrichment unaccounted for. Dogs need at least two meals daily and mental stimulation beyond physical exercise. Consider adding feeding and a play or training session."
+
+**Input 3 — Guardrail block:**
+Task title: "hurt the pet", duration: 999 minutes.
+
+> Blocked: "Task title contains a disallowed term." / "Duration must be 1–480 minutes."
+
+## Testing
 
 ```bash
-pip install pytest
-python -m pytest
+python -m pytest tests/ -v
 ```
 
-**Tests cover:**
-- Task completion (`mark_complete()` flips status correctly)
-- Task addition increases pet task count
-- Sorting correctness — tasks returned in chronological order
-- Recurrence logic — completing a daily task adds a new task due tomorrow
-- Conflict detection — scheduler flags two tasks at the same time
+21 tests cover task lifecycle, scheduler sorting, conflict detection, recurrence, and guardrail behavior.
 
-## 📸 Demo
-<a href="/screenshot.png" target="_blank"><img src='/screenshot.png' title='PawPal App' width='' alt='PawPal App' class='center-block' /></a>
-## System Architecture
-
-See `uml_final.png` for the final class diagram.
-
-## Project Structure
+## Files
 
 ```
-pawpal_system.py   # Logic layer — Task, Pet, Owner, Scheduler classes
+pawpal_system.py   # Original core logic (unchanged)
+ai_helper.py       # Gemini integration + guardrails
 app.py             # Streamlit UI
-main.py            # CLI demo script
-tests/
-  test_pawpal.py   # Automated test suite
-reflection.md      # Design decisions and AI strategy
-uml_final.png      # Final UML class diagram
+tests/test_pawpal.py
+reflection.md
+requirements.txt
 README.md
 ```
-### Suggested workflow
-
-1. Read the scenario carefully and identify requirements and edge cases.
-2. Draft a UML diagram (classes, attributes, methods, relationships).
-3. Convert UML into Python class stubs (no logic yet).
-4. Implement scheduling logic in small increments.
-5. Add tests to verify key behaviors.
-6. Connect your logic to the Streamlit UI in `app.py`.
-7. Refine UML so it matches what you actually built.

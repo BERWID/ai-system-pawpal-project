@@ -1,76 +1,26 @@
-# PawPal+ Project Reflection
+# PawPal+ Project Reflection AINExtension
 
-## 1. System Design
+## 1. How I used AI
 
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
-in the intial UML design you can add a pet with its name, species, and age. youc an also scehedule a task for the pet along with the time and how often. you can also view all of the tasks of the day in order.
-I identidied four main classes in pawpal:
-firstly task which represents a single activity and it holds a description, scheduled time, frequency, and completion status of the activity so its responsible for knowing whether it has been done.
-second pet which holds a pet's name, species, and age and owns a list of tasks and its responsible for adding/removing tasks and filtering the ones that are pending.
-third owner which Represents the app's user. It Holds a list of Pets and provides a view of all tasks for the pets. 
-Lastly, scheduler takes an owner and handles sorting, filtering, and displaying the daily schedule. Keeps business logic out of the data classes.
-**b. Design changes**
+I used claude and gemini throughout this project. claude helped me design the structure of the ai_helper.py file and create the input validation guardrail. gemini is integrated as the AI assistant inside the app itself.
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+One helpful suggestion claude made was separating the ai logic into its own ai_helper.py module rather than mixing it into app.py. This had made the code much easier to test and reason about.
+
+One flawed suggestion claude made was suggested adding a complex multi-turn conversation loop to the gemini calls. That was unnecessary,single-turn prompts work fine here and are simpler to debug.
 
 ---
 
-## 2. Scheduling Logic and Tradeoffs
+## 2. System Limitations
 
-**a. Constraints and priorities**
-
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
-
-**b. Tradeoffs**
-
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+1. no persistent storage.
+2. The guardrail blocks known bad terms but can't catch all unsafe inputs.
 
 ---
 
-## 3. AI Collaboration
+## 3. Future Improvements
 
-**a. How you used AI**
+Store tasks in a database so they persist across sessions.
+Let the owner rate the AI advice and use that to improve future prompts.
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
-
-**b. Judgment and verification**
-
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
-
----
-
-## 4. Testing and Verification
-
-**a. What you tested**
-
-- What behaviors did you test?
-- Why were these tests important?
-
-**b. Confidence**
-
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
-
----
-
-## 5. Reflection
-
-**a. What went well**
-
-- What part of this project are you most satisfied with?
-
-**b. What you would improve**
-
-- If you had another iteration, what would you improve or redesign?
-
-**c. Key takeaway**
-
-- What is one important thing you learned about designing systems or working with AI on this project?

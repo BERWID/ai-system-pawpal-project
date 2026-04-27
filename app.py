@@ -1,106 +1,83 @@
 import streamlit as st
 from pawpal_system import Owner, Pet, Scheduler, Task
-st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
+from ai_helper import get_schedule_advice, check_welfare, validate_input
 
+st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 st.title("🐾 PawPal+")
 
-st.markdown(
-    """
-Welcome to the PawPal+ starter app.
+for key, val in [("tasks", []), ("owner", None)]:
+    if key not in st.session_state:
+        st.session_state[key] = val
 
-This file is intentionally thin. It gives you a working Streamlit app so you can start quickly,
-but **it does not implement the project logic**. Your job is to design the system and build it.
+with st.sidebar:
+    gemini_key = st.text_input("Gemini API key", type="password")
 
-Use this app as your interactive demo once your backend classes/functions exist.
-"""
-)
+st.subheader("Owner & Pet")
+col1, col2, col3 = st.columns(3)
+owner_name = col1.text_input("Owner name", value="Jordan")
+pet_name = col2.text_input("Pet name", value="Mochi")
+species = col3.selectbox("Species", ["dog", "cat", "other"])
 
-with st.expander("Scenario", expanded=True):
-    st.markdown(
-        """
-**PawPal+** is a pet care planning assistant. It helps a pet owner plan care tasks
-for their pet(s) based on constraints like time, priority, and preferences.
-
-You will design and implement the scheduling logic and connect it to this Streamlit UI.
-"""
-    )
-
-with st.expander("What you need to build", expanded=True):
-    st.markdown(
-        """
-At minimum, your system should:
-- Represent pet care tasks (what needs to happen, how long it takes, priority)
-- Represent the pet and the owner (basic info and preferences)
-- Build a plan/schedule for a day that chooses and orders tasks based on constraints
-- Explain the plan (why each task was chosen and when it happens)
-"""
-    )
-
-st.divider()
-
-if "owner" not in st.session_state:
-    st.session_state.owner = None
-if "tasks" not in st.session_state:
-    st.session_state.tasks = []
-
-
-st.subheader("Quick Demo Inputs (UI only)")
-owner_name = st.text_input("Owner name", value="Jordan")
-pet_name = st.text_input("Pet name", value="Mochi")
-species = st.selectbox("Species", ["dog", "cat", "other"])
-
-st.markdown("### Tasks")
-st.caption("Add a few tasks. In your final version, these should feed into your scheduler.")
-
-if "tasks" not in st.session_state:
-    st.session_state.tasks = []
-
+st.subheader("Tasks")
 col1, col2, col3, col4 = st.columns(4)
-with col1:
-    task_title = st.text_input("Task title", value="Morning walk")
-with col2:
-    duration = st.number_input("Duration (minutes)", min_value=1, max_value=240, value=20)
-with col3:
-    priority = st.selectbox("Priority", ["low", "medium", "high"], index=2)
-with col4:
-    task_time = st.text_input("Time (HH:MM AM/PM)", value="08:00 AM")
+task_title = col1.text_input("Task title", value="Morning walk")
+duration = col2.number_input("Duration (min)", min_value=1, max_value=480, value=20)
+priority = col3.selectbox("Priority", ["low", "medium", "high"], index=2)
+task_time = col4.text_input("Time (HH:MM AM/PM)", value="08:00 AM")
 
 if st.button("Add task"):
-    st.session_state.tasks.append(
-        {"title": task_title, "duration_minutes": int(duration), "priority": priority, "time": task_time}
-    )
+    ok, reason = validate_input(task_title, int(duration))
+    if not ok:
+        st.error(f"Blocked: {reason}")
+    else:
+        st.session_state.tasks.append(
+            {"title": task_title, "duration_minutes": int(duration), "priority": priority, "time": task_time}
+        )
 
 if st.session_state.tasks:
-    st.write("Current tasks:")
     st.table(st.session_state.tasks)
 else:
-    st.info("No tasks yet. Add one above.")
+    st.info("No tasks yet.")
 
 st.divider()
-
-st.subheader("Build Schedule")
-
-if st.button("Generate schedule"):
+st.subheader("Generate Schedule")
+if st.button("Build schedule"):
     if not st.session_state.tasks:
-        st.warning("Add at least one task before generating a schedule.")
+        st.warning("Add tasks first.")
     else:
         owner = Owner(name=owner_name, email="owner@example.com")
         pet = Pet(name=pet_name, species=species, age=3)
         for t in st.session_state.tasks:
-            frequency = "daily" if t["priority"] == "high" else "weekly"
-            pet.add_task(Task(description=t["title"], time=t["time"], frequency=frequency))
+            freq = "daily" if t["priority"] == "high" else "weekly"
+            pet.add_task(Task(description=t["title"], time=t["time"], frequency=freq))
         owner.add_pet(pet)
         scheduler = Scheduler(owner)
-
-        conflicts = scheduler.detect_conflicts()
-        for c in conflicts:
+        for c in scheduler.detect_conflicts():
             st.warning(f"⚠️ {c}")
-
         schedule = scheduler.get_todays_schedule()
-        st.success(f"Schedule generated for {pet_name}! ({len(schedule)} tasks)")
-        st.markdown("### Today's Schedule")
+        st.success(f"{len(schedule)} task(s) scheduled for {pet_name}")
         for _, task in schedule:
-            status = "✓" if task.completed else "○"
-            st.write(f"{status} {task.time} — {task.description} ({task.frequency})")
+            st.write(f"{'✅' if task.completed else '🔲'} **{task.time}** — {task.description}")
 
-        st.session_state.owner = owner
+st.divider()
+st.subheader("🤖 AI Assistant (Gemini)")
+
+if st.button("Get AI schedule advice"):
+    if not gemini_key:
+        st.error("Enter your Gemini API key in the sidebar.")
+    elif not st.session_state.tasks:
+        st.warning("Add tasks first.")
+    else:
+        with st.spinner("Asking Gemini..."):
+            advice = get_schedule_advice(gemini_key, pet_name, species, st.session_state.tasks)
+        st.info(advice)
+
+if st.button("Check animal welfare"):
+    if not gemini_key:
+        st.error("Enter your Gemini API key in the sidebar.")
+    elif not st.session_state.tasks:
+        st.warning("Add tasks first.")
+    else:
+        with st.spinner("Checking..."):
+            result = check_welfare(gemini_key, pet_name, species, st.session_state.tasks)
+        st.warning(result)
