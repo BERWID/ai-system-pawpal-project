@@ -14,21 +14,6 @@ This extends **PawPal+** from Module 2. The original app let a pet owner registe
 
 ## Architecture
 
-```
-User
- │
- ▼
-Streamlit UI (app.py)
- │              │
- ▼              ▼
-Scheduler    ai_helper.py
-(rule-based)  ├── validate_input()  ← Guardrail
-              ├── get_schedule_advice() ──► Gemini API
-              └── check_welfare()        ──► Gemini API
-                                              │
-                                         pawpal.log
-```
-
 Data flow: User inputs task → guardrail validates → added to session → "Build schedule" sorts by time and detects conflicts → "Get AI advice" sends tasks to Gemini → response shown in UI.
 
 ## Setup
@@ -40,22 +25,24 @@ streamlit run app.py
 
 Enter your Gemini API key in the sidebar when the app opens.
 
-## Sample Inputs & Outputs
+## WalkThrough + Sample Inputs & Outputs
+https://drive.google.com/file/d/1UQ0KWmwobYg87umbB4Cw35U1XGbD2fQD/view?usp=sharing
 
-**Input 1 — Schedule advice:**
+Input 1 — Schedule advice:
 Tasks: Morning walk (08:00 AM), Feeding (07:00 AM), Medication (12:00 PM) for a dog named Mochi.
 
-> "Start with feeding at 7 AM since dogs should eat before exercise. Follow with the morning walk at 8 AM once digestion has begun. Give medication at noon as scheduled — midday doses are easiest to remember and least disruptive to activity."
+"Start with feeding at 7 AM since dogs should eat before exercise. Follow with the morning walk at 8 AM once digestion has begun. Give medication at noon as scheduled — midday doses are easiest to remember and least disruptive to activity."
 
-**Input 2 — Welfare check:**
+Input 2 — Welfare check:
 Tasks: Morning walk only, for a dog.
 
-> "A single walk covers exercise but leaves feeding, water, and enrichment unaccounted for. Dogs need at least two meals daily and mental stimulation beyond physical exercise. Consider adding feeding and a play or training session."
+"A single walk covers exercise but leaves feeding, water, and enrichment unaccounted for. Dogs need at least two meals daily and mental stimulation beyond physical exercise. Consider adding feeding and a play or training session."
 
-**Input 3 — Guardrail block:**
+Input 3 — Guardrail block:
 Task title: "hurt the pet", duration: 999 minutes.
 
-> Blocked: "Task title contains a disallowed term." / "Duration must be 1–480 minutes."
+Blocked: "Task title contains a disallowed term." / "Duration must be 1–480 minutes."
+
 
 ## Testing
 
@@ -63,7 +50,7 @@ Task title: "hurt the pet", duration: 999 minutes.
 python -m pytest tests/ -v
 ```
 
-21 tests cover task lifecycle, scheduler sorting, conflict detection, recurrence, and guardrail behavior.
+These 21 tests cover task lifecycle, scheduler sorting, conflict detection, recurrence, and guardrail behavior.
 
 ## Files
 
